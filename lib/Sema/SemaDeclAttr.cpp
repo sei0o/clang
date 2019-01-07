@@ -818,6 +818,17 @@ static void handleAllocSizeAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
                                AL.getAttributeSpellingListIndex()));
 }
 
+static void handleMultiCanarySizeAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  const Expr *SizeExpr = AL.getArgAsExpr(0);
+  uint32_t CanarySize;
+  if (!checkUInt32Argument(S, AL, SizeExpr, CanarySize, 0))
+    return;
+
+  // FIXME: what does this mean?
+  D->addAttr(::new (S.Context) MultiCanarySizeAttr(
+    AL.getRange(), S.Context, CanarySize, AL.getAttributeSpellingListIndex()));
+}
+
 static bool checkTryLockFunAttrCommon(Sema &S, Decl *D, const ParsedAttr &AL,
                                       SmallVectorImpl<Expr *> &Args) {
   if (!checkAttributeAtLeastNumArgs(S, AL, 1))
@@ -6051,6 +6062,9 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
     break;
   case ParsedAttr::AT_AllocSize:
     handleAllocSizeAttr(S, D, AL);
+    break;
+  case ParsedAttr::AT_MultiCanarySize:
+    handleMultiCanarySizeAttr(S, D, AL);
     break;
   case ParsedAttr::AT_AlwaysInline:
     handleAlwaysInlineAttr(S, D, AL);

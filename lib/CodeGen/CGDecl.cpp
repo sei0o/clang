@@ -1262,8 +1262,10 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
       // Create the alloca.  Note that we set the name separately from
       // building the instruction so that it's there even in no-asserts
       // builds.
+      unsigned MultiCanarySize = 0;
+      if (D.hasAttr<MultiCanarySizeAttr>()) MultiCanarySize = D.getAttr<MultiCanarySizeAttr>()->getCanarySize();
       address = CreateTempAlloca(allocaTy, allocaAlignment, D.getName(),
-                                 /*ArraySize=*/nullptr, &AllocaAddr);
+                                 /*ArraySize=*/nullptr, &AllocaAddr, MultiCanarySize);
 
       // Don't emit lifetime markers for MSVC catch parameters. The lifetime of
       // the catch parameter starts in the catchpad instruction, and we can't
@@ -1320,8 +1322,10 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
     llvm::Type *llvmTy = ConvertTypeForMem(VlaSize.Type);
 
     // Allocate memory for the array.
+    unsigned MultiCanarySize = 0;
+    if (D.hasAttr<MultiCanarySizeAttr>()) MultiCanarySize = D.getAttr<MultiCanarySizeAttr>()->getCanarySize();
     address = CreateTempAlloca(llvmTy, alignment, "vla", VlaSize.NumElts,
-                               &AllocaAddr);
+                               &AllocaAddr, MultiCanarySize);
 
     // If we have debug info enabled, properly describe the VLA dimensions for
     // this type by registering the vla size expression for each of the

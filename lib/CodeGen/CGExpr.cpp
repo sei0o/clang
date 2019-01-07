@@ -64,8 +64,9 @@ llvm::Value *CodeGenFunction::EmitCastToVoidPtr(llvm::Value *value) {
 Address CodeGenFunction::CreateTempAllocaWithoutCast(llvm::Type *Ty,
                                                      CharUnits Align,
                                                      const Twine &Name,
-                                                     llvm::Value *ArraySize) {
-  auto Alloca = CreateTempAlloca(Ty, Name, ArraySize);
+                                                     llvm::Value *ArraySize,
+                                                     unsigned MultiCanarySize) {
+  auto Alloca = CreateTempAlloca(Ty, Name, ArraySize, MultiCanarySize);
   Alloca->setAlignment(Align.getQuantity());
   return Address(Alloca, Align);
 }
@@ -75,8 +76,9 @@ Address CodeGenFunction::CreateTempAllocaWithoutCast(llvm::Type *Ty,
 Address CodeGenFunction::CreateTempAlloca(llvm::Type *Ty, CharUnits Align,
                                           const Twine &Name,
                                           llvm::Value *ArraySize,
-                                          Address *AllocaAddr) {
-  auto Alloca = CreateTempAllocaWithoutCast(Ty, Align, Name, ArraySize);
+                                          Address *AllocaAddr,
+                                          unsigned MultiCanarySize) {
+  auto Alloca = CreateTempAllocaWithoutCast(Ty, Align, Name, ArraySize, MultiCanarySize);
   if (AllocaAddr)
     *AllocaAddr = Alloca;
   llvm::Value *V = Alloca.getPointer();
@@ -105,11 +107,16 @@ Address CodeGenFunction::CreateTempAlloca(llvm::Type *Ty, CharUnits Align,
 /// insertion point of the builder.
 llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
                                                     const Twine &Name,
-                                                    llvm::Value *ArraySize) {
+                                                    llvm::Value *ArraySize,
+                                                    unsigned MultiCanarySize) {
+  llvm::AllocaInst *AI;
   if (ArraySize)
-    return Builder.CreateAlloca(Ty, ArraySize, Name);
-  return new llvm::AllocaInst(Ty, CGM.getDataLayout().getAllocaAddrSpace(),
-                              ArraySize, Name, AllocaInsertPt);
+    AI = Builder.CreateAlloca(Ty, ArraySize, Name);
+  else
+    AI = new llvm::AllocaInst(Ty, CGM.getDataLayout().getAllocaAddrSpace(), ArraySize, Name, AllocaInsertPt);
+
+  AI->setMultiCanarySize(MultiCanarySize);
+  return AI;
 }
 
 /// CreateDefaultAlignTempAlloca - This creates an alloca with the

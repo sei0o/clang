@@ -1075,6 +1075,13 @@ def AllocSize : InheritableAttr {
   let Documentation = [AllocSizeDocs];
 }
 
+def MultiCanarySize : InheritableAttr {
+  let Spellings = [GCC<"multicanary_size">];
+  let Subjects = SubjectList<[Var]>;
+  let Args = [UnsignedArgument<"CanarySize">];
+  let Documentation = [Undocumented];
+}
+
 def EnableIf : InheritableAttr {
   // Does not have a [[]] spelling because this attribute requires the ability
   // to parse function arguments but the attribute is not written in the type
